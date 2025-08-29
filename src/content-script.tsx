@@ -6,7 +6,7 @@ const CONTAINER_ID = "my-react-content-script-root";
 function injectCSS() {
   const style = document.createElement("style");
   style.textContent = `
-    .ProseMirror {
+    .chromeExtensionEditorContent {
       min-height: 290px;
       max-height: 290px;
       margin-right: 8px;
@@ -16,7 +16,7 @@ function injectCSS() {
       overflow: auto;
     }
 
-.ProseMirror ol > li > p {
+.chromeExtensionEditorContent ol > li > p {
     /* Twoja klasa lub style */
     margin-left: 5px;
     padding: 2px 0px;
@@ -24,7 +24,7 @@ function injectCSS() {
     margin-bottom: 0px;
   }  
   
-.ProseMirror ul > li > p {
+.chromeExtensionEditorContent ul > li > p {
     /* Twoja klasa lub style */
     margin-left: 5px;
     padding: 2px 0px;

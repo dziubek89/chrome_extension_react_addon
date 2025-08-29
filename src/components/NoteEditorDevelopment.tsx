@@ -7,6 +7,7 @@ import { TextStyle } from "@tiptap/extension-text-style";
 import Color from "@tiptap/extension-color";
 import CodeBlock from "@tiptap/extension-code-block";
 import { Extension } from "@tiptap/core";
+import Link from "@tiptap/extension-link";
 import { useState } from "react";
 
 type Props = {
@@ -58,11 +59,17 @@ export default function NoteEditor({ setNoteHandler }: Props) {
     bulletList: false,
     orderedList: false,
     codeBlock: false,
+    link: false,
   });
 
   const editor = useEditor({
     extensions: [
-      StarterKit.configure({ heading: false, codeBlock: false }),
+      StarterKit.configure({
+        heading: false,
+        codeBlock: false,
+        bulletList: {},
+        orderedList: {},
+      }),
       TextStyle,
       Color.configure({ types: ["textStyle"] }),
       FontSize,
@@ -74,34 +81,35 @@ export default function NoteEditor({ setNoteHandler }: Props) {
             HTMLAttributes: {
               class: "code-block",
               style: `
-              background: #000000;
-              color: #ffffff;
-              padding: 10px;
-              margin: 10px;
-              border-radius: 6px;
-              border: 1px solid #333;
-              font-family: monospace;
-
-            `,
+                background: #000000;
+                color: #ffffff;
+                padding: 10px;
+                margin: 10px;
+                border-radius: 6px;
+                border: 1px solid #333;
+                font-family: monospace;
+              `,
             },
           };
         },
       }),
+      Link.configure({
+        openOnClick: true,
+        linkOnPaste: true,
+      }),
     ],
-    content: `
-     <div style="min-height: 200px;"></div>
-    `,
+    content: `<div style="min-height: 200px;"></div>`,
+    editorProps: {
+      attributes: {
+        class: "chromeExtensionEditorContent",
+      },
+    },
     onUpdate({ editor }) {
       setNoteHandler(editor.getHTML());
     },
   });
 
   if (!editor) return null;
-
-  //@ts-ignore
-  const isActive = (type: string) => editor.isActive(type);
-
-  console.log(isActive("bold"));
 
   const buttonStyle = (active: boolean) => ({
     padding: "6px 10px",
@@ -114,23 +122,6 @@ export default function NoteEditor({ setNoteHandler }: Props) {
     boxShadow: active ? "0 0 4px rgba(0, 123, 255, 0.5)" : "none",
     transition: "all 0.2s ease",
   });
-
-  // const saveNote = async () => {
-  //   if (!editor) return;
-
-  //   const note = editor.getHTML();
-  //   const currentUrl = window.location.href.split("?")[0];
-
-  //   const response = await sendMessageAsync({
-  //     type: "ADD_NOTE",
-  //     url: currentUrl,
-  //     note: JSON.stringify(note),
-  //     category: "test",
-  //     title: "trst",
-  //   });
-
-  //   console.log(response);
-  // };
 
   const onChangeHandler = (element: string) => {
     switch (element) {
@@ -149,6 +140,18 @@ export default function NoteEditor({ setNoteHandler }: Props) {
       case "codeBlock":
         editor.chain().focus().toggleCodeBlock().run();
         break;
+      case "link":
+        const url = prompt("Enter URL:");
+        if (url) {
+          const urlHttp = /^https?:\/\//i.test(url) ? url : `https://${url}`;
+          editor
+            .chain()
+            .focus()
+            .extendMarkRange("link")
+            .setLink({ href: urlHttp })
+            .run();
+        }
+        break;
       default:
         console.log("Nieznana komenda:", element);
     }
@@ -159,6 +162,7 @@ export default function NoteEditor({ setNoteHandler }: Props) {
       bulletList: editor.isActive("bulletList"),
       orderedList: editor.isActive("orderedList"),
       codeBlock: editor.isActive("codeBlock"),
+      link: editor.isActive("link"),
     });
   };
 
@@ -182,7 +186,6 @@ export default function NoteEditor({ setNoteHandler }: Props) {
           flexWrap: "wrap",
         }}
       >
-        {/* Wybór koloru */}
         <input
           type="color"
           onInput={(e) =>
@@ -197,7 +200,6 @@ export default function NoteEditor({ setNoteHandler }: Props) {
           }}
         />
 
-        {/* Rozmiar fontu */}
         <select
           onChange={(e) => {
             const size = e.target.value;
@@ -221,7 +223,6 @@ export default function NoteEditor({ setNoteHandler }: Props) {
           <option value="24px">24px</option>
         </select>
 
-        {/* Przyciski formatowania */}
         <button
           onClick={() => onChangeHandler("bold")}
           style={buttonStyle(isButtonActive["bold"])}
@@ -256,12 +257,47 @@ export default function NoteEditor({ setNoteHandler }: Props) {
         >
           {"</> Code"}
         </button>
+
+        <button
+          onClick={() => onChangeHandler("link")}
+          style={buttonStyle(isButtonActive["link"])}
+        >
+          🔗 Link
+        </button>
       </div>
 
       {/* Edytor */}
       <div style={{ flex: 1, overflowY: "auto" }}>
-        <EditorContent editor={editor} style={{}} />
+        <EditorContent
+          className="chromeExtensionEditorContent"
+          editor={editor}
+          style={{ minHeight: "200px", padding: "8px", outline: "none" }}
+        />
       </div>
+
+      {/* Style globalne */}
+      {/* <style jsx global>{`
+        .chromeExtensionEditorContent ul {
+          list-style-type: disc;
+          padding-left: 1.5rem;
+          margin: 0.5rem 0;
+        }
+
+        .chromeExtensionEditorContent ol {
+          list-style-type: decimal;
+          padding-left: 1.5rem;
+          margin: 0.5rem 0;
+        }
+
+        .chromeExtensionEditorContent li {
+          margin: 0.3rem 0;
+        }
+
+        .chromeExtensionEditorContent a {
+          color: #1d4ed8;
+          text-decoration: underline;
+        }
+      `}</style> */}
     </div>
   );
 }
